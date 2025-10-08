@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Couture Royale - Atelier de Couture à Dakar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Edit Mode Styles */
+        .edit-mode-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.3);
+            z-index: 10000;
+            transition: right 0.3s;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .edit-mode-panel.active {
+            right: 0;
+        }
+
+        .edit-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #1e3c72 0%, #7e22ce 100%);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 9999;
+            font-weight: bold;
+            box-shadow: 0 5px 20px rgba(126, 34, 206, 0.4);
+        }
+
+        .edit-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .edit-section h3 {
+            color: #1e3c72;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .edit-field {
+            margin-bottom: 1rem;
+        }
+
+        .edit-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .edit-field input,
+        .edit-field textarea {
+            width: 100%;
+            padding: 0.7rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .edit-field input:focus,
+        .edit-field textarea:focus {
+            outline: none;
+            border-color: #7e22ce;
+        }
+
+        .edit-field textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .save-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+        }
+
+        .export-btn {
+            background: #7e22ce;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+
+        .close-panel {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .password-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-overlay.active {
+            display: flex;
+        }
+
+        .password-box {
+            background: white;
+            padding: 3rem;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .password-box h2 {
+            margin-bottom: 1.5rem;
+            color: #7e22ce;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .password-box button {
+            background: #7e22ce;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        .error-message {
+            color: #ef4444;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 70px;
+            background: linear-gradient(rgba(30, 60, 114, 0.85), rgba(126, 34, 206, 0.85)), 
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600"><rect fill="%231e3c72" width="1200" height="600"/></svg>');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 8rem 2rem;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            animation: fadeInUp 1s;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            animation: fadeInUp 1s 0.2s backwards;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #1e3c72;
+        }
+
+        /* Services Section */
+        .services {
+            padding: 5rem 2rem;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #1e3c72;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-card h3 {
+            margin-bottom: 1rem;
+            color: #1e3c72;
+            font-size: 1.3rem;
+        }
+
+        .price {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #7e22ce;
+            margin-top: 1rem;
+        }
+
+        /* Gallery Section */
+        .gallery {
+            padding: 5rem 2rem;
+            background: white;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 15px;
+            height: 300px;
+            background: linear-gradient(135deg, #1e3c72 0%, #7e22ce 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        /* Contact Section */
+        .contact {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, #1e3c72 0%, #7e22ce 100%);
+            color: white;
+        }
+
+        .contact-content {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .contact-item {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .contact-item h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .whatsapp-btn {
+            background: #25D366;
+            color: white;
+            padding: 1.5rem 3rem;
+            border-radius: 50px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 2rem;
+            transition: transform 0.3s;
+        }
+
+        .whatsapp-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .edit-mode-panel {
+                width: 100%;
+                right: -100%;
+            }
+
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: #1e3c72;
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .nav-links.active {
+                display: flex;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Overlay -->
+    <div class="password-overlay" id="passwordOverlay">
+        <div class="password-box">
+            <h2>🔒 Mode Édition</h2>
+            <p style="margin-bottom: 1rem; color: #666;">Entrez le mot de passe</p>
+            <input type="password" id="passwordInput" placeholder="Mot de passe">
+            <p class="error-message" id="errorMessage" style="display: none;">Mot de passe incorrect</p>
+            <button onclick="checkPassword()">Déverrouiller</button>
+        </div>
+    </div>
+
+    <!-- Edit Panel -->
+    <div class="edit-mode-panel" id="editPanel">
+        <button class="close-panel" onclick="closeEditMode()">×</button>
+        <h2 style="color: #7e22ce; margin-bottom: 2rem;">✏️ Mode Édition</h2>
+
+        <div class="edit-section">
+            <h3>✂️ Informations Atelier</h3>
+            <div class="edit-field">
+                <label>Nom de l'Atelier</label>
+                <input type="text" id="edit-business-name" value="Couture Royale">
+            </div>
+            <div class="edit-field">
+                <label>Slogan</label>
+                <input type="text" id="edit-hero-title" value="L'Excellence en Couture">
+            </div>
+            <div class="edit-field">
+                <label>Description</label>
+                <input type="text" id="edit-hero-subtitle" value="Créations sur-mesure pour hommes, femmes et enfants - Qualité et élégance garanties">
+            </div>
+        </div>
+
+        <div class="edit-section">
+            <h3>👔 Services (Max 6)</h3>
+            <div class="edit-field">
+                <label>Service 1 - Nom</label>
+                <input type="text" id="edit-service1-name" value="Costumes Sur-Mesure">
+            </div>
+            <div class="edit-field">
+                <label>Service 1 - Description</label>
+                <input type="text" id="edit-service1-desc" value="Costumes élégants, coupe parfaite">
+            </div>
+            <div class="edit-field">
+                <label>Service 1 - Prix</label>
+                <input type="text" id="edit-service1-price" value="À partir de 50 000 FCFA">
+            </div>
+
+            <div class="edit-field">
+                <label>Service 2 - Nom</label>
+                <input type="text" id="edit-service2-name" value="Robes de Soirée">
+            </div>
+            <div class="edit-field">
+                <label>Service 2 - Description</label>
+                <input type="text" id="edit-service2-desc" value="Créations uniques, style raffiné">
+            </div>
+            <div class="edit-field">
+                <label>Service 2 - Prix</label>
+                <input type="text" id="edit-service2-price" value="À partir de 40 000 FCFA">
+            </div>
+
+            <div class="edit-field">
+                <label>Service 3 - Nom</label>
+                <input type="text" id="edit-service3-name" value="Tenues Traditionnelles">
+            </div>
+            <div class="edit-field">
+                <label>Service 3 - Description</label>
+                <input type="text" id="edit-service3-desc" value="Boubous, Kaftan, styles authentiques">
+            </div>
+            <div class="edit-field">
+                <label>Service 3 - Prix</label>
+                <input type="text" id="edit-service3-price" value="À partir de 25 000 FCFA">
+            </div>
+        </div>
+
+        <div class="edit-section">
+            <h3>📞 Contact</h3>
+            <div class="edit-field">
+                <label>Adresse</label>
+                <textarea id="edit-address">Médina, Rue 15
+Près du marché Tilène, Dakar</textarea>
+            </div>
+            <div class="edit-field">
+                <label>Horaires</label>
+                <textarea id="edit-hours">Lun - Sam: 8h - 19h
+Dimanche: Sur rendez-vous</textarea>
+            </div>
+            <div class="edit-field">
+                <label>Téléphone 1</label>
+                <input type="text" id="edit-phone1" value="+221 77 888 99 00">
+            </div>
+            <div class="edit-field">
+                <label>Téléphone 2</label>
+                <input type="text" id="edit-phone2" value="+221 70 111 22 33">
+            </div>
+            <div class="edit-field">
+                <label>WhatsApp (221778889900)</label>
+                <input type="text" id="edit-whatsapp" value="221778889900">
+            </div>
+        </div>
+
+        <button class="save-btn" onclick="applyChanges()">💾 Appliquer</button>
+        <button class="export-btn" onclick="exportHTML()">📥 Télécharger</button>
+    </div>
+
+    <button class="edit-toggle-btn" onclick="openPasswordPrompt()">✏️ Mode Édition</button>
+
+    <header>
+        <nav>
+            <div class="logo" id="logo">✂️ Couture Royale</div>
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#accueil">Accueil</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#galerie">Galerie</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero" id="accueil">
+        <h1 id="hero-title">L'Excellence en Couture</h1>
+        <p id="hero-subtitle">Créations sur-mesure pour hommes, femmes et enfants - Qualité et élégance garanties</p>
+        <a href="#contact" class="btn btn-primary">Prendre Rendez-vous</a>
+    </section>
+
+    <section class="services" id="services">
+        <div class="container">
+            <h2 class="section-title">Nos Services</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">👔</div>
+                    <h3 id="service1-name">Costumes Sur-Mesure</h3>
+                    <p id="service1-desc">Costumes élégants, coupe parfaite</p>
+                    <div class="price" id="service1-price">À partir de 50 000 FCFA</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">👗</div>
+                    <h3 id="service2-name">Robes de Soirée</h3>
+                    <p id="service2-desc">Créations uniques, style raffiné</p>
+                    <div class="price" id="service2-price">À partir de 40 000 FCFA</div>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🎭</div>
+                    <h3 id="service3-name">Tenues Traditionnelles</h3>
+                    <p id="service3-desc">Boubous, Kaftan, styles authentiques</p>
+                    <div class="price" id="service3-price">À partir de 25 000 FCFA</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="gallery" id="galerie">
+        <div class="container">
+            <h2 class="section-title">Notre Galerie</h2>
+            <div class="gallery-grid">
+                <div class="gallery-item">📸 Création 1</div>
+                <div class="gallery-item">📸 Création 2</div>
+                <div class="gallery-item">📸 Création 3</div>
+                <div class="gallery-item">📸 Création 4</div>
+                <div class="gallery-item">📸 Création 5</div>
+                <div class="gallery-item">📸 Création 6</div>
+            </div>
+            <p style="text-align: center; margin-top: 2rem; color: #666;">
+                💡 Remplacez ces placeholders par vos vraies photos de créations
+            </p>
+        </div>
+    </section>
+
+    <section class="contact" id="contact">
+        <div class="contact-content">
+            <h2 class="section-title" style="color: white;">Contactez-Nous</h2>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <h3>📍 Adresse</h3>
+                    <p id="contact-address">Médina, Rue 15<br>Près du marché Tilène, Dakar</p>
+                </div>
+                <div class="contact-item">
+                    <h3>⏰ Horaires</h3>
+                    <p id="contact-hours">Lun - Sam: 8h - 19h<br>Dimanche: Sur rendez-vous</p>
+                </div>
+                <div class="contact-item">
+                    <h3>📞 Téléphone</h3>
+                    <p id="contact-phones">+221 77 888 99 00<br>+221 70 111 22 33</p>
+                </div>
+            </div>
+            <a href="https://wa.me/221778889900?text=Bonjour,%20je%20voudrais%20prendre%20rendez-vous" 
+               class="whatsapp-btn" id="whatsapp-link" target="_blank">
+               💬 Commander sur WhatsApp
+            </a>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2025 <span id="footer-name">Couture Royale</span> - Atelier de Couture Dakar</p>
+    </footer>
+
+    <script>
+        const PASSWORD = '3a2JeanP';
+
+        function openPasswordPrompt() {
+            document.getElementById('passwordOverlay').classList.add('active');
+            document.getElementById('passwordInput').focus();
+        }
+
+        function checkPassword() {
+            const input = document.getElementById('passwordInput').value;
+            if (input === PASSWORD) {
+                document.getElementById('passwordOverlay').classList.remove('active');
+                document.getElementById('editPanel').classList.add('active');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('errorMessage').style.display = 'none';
+            } else {
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        }
+
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkPassword();
+        });
+
+        function closeEditMode() {
+            document.getElementById('editPanel').classList.remove('active');
+        }
+
+        function applyChanges() {
+            const businessName = document.getElementById('edit-business-name').value;
+            document.getElementById('logo').innerHTML = `✂️ ${businessName}`;
+            document.getElementById('footer-name').textContent = businessName;
+            document.title = `${businessName} - Atelier de Couture à Dakar`;
+
+            document.getElementById('hero-title').textContent = document.getElementById('edit-hero-title').value;
+            document.getElementById('hero-subtitle').textContent = document.getElementById('edit-hero-subtitle').value;
+
+            for (let i = 1; i <= 3; i++) {
+                document.getElementById(`service${i}-name`).textContent = document.getElementById(`edit-service${i}-name`).value;
+                document.getElementById(`service${i}-desc`).textContent = document.getElementById(`edit-service${i}-desc`).value;
+                document.getElementById(`service${i}-price`).textContent = document.getElementById(`edit-service${i}-price`).value;
+            }
+
+            document.getElementById('contact-address').innerHTML = document.getElementById('edit-address').value.replace(/\n/g, '<br>');
+            document.getElementById('contact-hours').innerHTML = document.getElementById('edit-hours').value.replace(/\n/g, '<br>');
+            
+            const phone1 = document.getElementById('edit-phone1').value;
+            const phone2 = document.getElementById('edit-phone2').value;
+            document.getElementById('contact-phones').innerHTML = `${phone1}<br>${phone2}`;
+
+            const whatsapp = document.getElementById('edit-whatsapp').value;
+            document.getElementById('whatsapp-link').href = `https://wa.me/${whatsapp}?text=Bonjour,%20je%20voudrais%20prendre%20rendez-vous`;
+
+            alert('✅ Modifications appliquées !');
+        }
+
+        function exportHTML() {
+            const html = document.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tailleur-personnalise.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('📥 Site téléchargé !');
+        }
+
+        function toggleMenu() {
+            document.getElementById('navLinks').classList.toggle('active');
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    document.getElementById('navLinks').classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
